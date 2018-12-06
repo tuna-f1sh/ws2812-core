@@ -2,7 +2,6 @@
 
 module top (
 	input  clk,
-    output [7:0] LED,
     output ws_data
 );
 

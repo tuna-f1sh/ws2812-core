@@ -10,6 +10,7 @@
 module ws2812 (
     input [23:0] rgb_data,
     input [7:0] led_num,
+    input [23:0] led_mask,
     input write,
     input reset,
     input clk,  //12MHz
@@ -65,7 +66,7 @@ module ws2812 (
     always @(posedge clk) begin
         if(write)
             led_reg[led_num] <= rgb_data;
-        led_color <= led_reg[led_counter];
+        led_color <= led_mask[led_counter] ? rgb_data : 24'h00_00_00;
     end
 
     integer i;
