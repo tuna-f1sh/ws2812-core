@@ -8,10 +8,7 @@
 
 
 module ws2812 (
-    input [23:0] rgb_data,
-    input [7:0] led_num,
-    input [23:0] led_mask,
-    input write,
+    input [24 * NUM_LEDS - 1:0] packed_rgb_data,
     input reset,
     input clk,  //12MHz
 
@@ -49,7 +46,8 @@ module ws2812 (
 
     initial data = 0;
 
-    reg [23:0] led_reg [NUM_LEDS-1:0];
+    wire [24 * NUM_LEDS - 1:0] led_reg;
+    assign led_reg = packed_rgb_data;
 
     reg [LED_BITS-1:0] led_counter = 0;
     reg [COUNT_BITS-1:0] bit_counter = 0;
@@ -60,31 +58,13 @@ module ws2812 (
 
     reg [1:0] state = STATE_RESET;
 
-    reg [23:0] led_color;
-
-    // handle reading new led data
-    always @(posedge clk) begin
-        if(write)
-            led_reg[led_num] <= rgb_data;
-        led_color <= led_mask[led_counter] ? rgb_data : 24'h00_00_00;
-    end
+    reg [23:0] led_color = 24'h00_00_00;
 
     integer i;
 
     always @(posedge clk)
         // reset
         if(reset) begin
-	    //  In order to infer BRAM, can't have a reset condition
-	    //  like this. But it will fail formal if you don't reset
-	    //  it.
-            `ifdef NO_MEM_RESET
-	    $display("Bypassing memory reset to allow BRAM");
-	    `else
-            // initialise led data to 0
-            for (i=0; i<NUM_LEDS; i=i+1)
-                led_reg[i] <= 0;
-	    `endif
-
             state <= STATE_RESET;
             bit_counter <= t_reset;
             rgb_counter <= 23;
@@ -105,6 +85,7 @@ module ws2812 (
                 if(bit_counter == 0) begin
                     state <= STATE_DATA;
                     bit_counter <= t_period;
+                    led_color <= led_reg[23 * led_counter +: 23];
                 end
             end
 
@@ -127,6 +108,7 @@ module ws2812 (
                         led_counter <= led_counter - 1;
                         bit_counter <= t_period;
                         rgb_counter <= 23;
+                        led_color <= led_reg[23 * led_counter +: 23];
 
                         if(led_counter == 0) begin
                             state <= STATE_RESET;
@@ -175,16 +157,6 @@ module ws2812 (
             end
         end
 
-        // leds < NUM_LEDSs
-        always @(posedge clk)
-            assume(led_num < NUM_LEDS);
-
-        // check that writes end up in the led register
-        always @(posedge clk)
-            if (f_past_valid)
-                if(!$past(reset) && $past(write))
-                    assert(led_reg[$past(led_num)] == $past(rgb_data));
-            
     `endif
     
 endmodule
