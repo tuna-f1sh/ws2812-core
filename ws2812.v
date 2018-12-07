@@ -60,8 +60,6 @@ module ws2812 (
 
     reg [23:0] led_color = 24'h00_00_00;
 
-    integer i;
-
     always @(posedge clk)
         // reset
         if(reset) begin
@@ -85,7 +83,7 @@ module ws2812 (
                 if(bit_counter == 0) begin
                     state <= STATE_DATA;
                     bit_counter <= t_period;
-                    led_color <= led_reg[23 * led_counter +: 23];
+                    led_color <= led_reg[23 * led_counter -: 24];
                 end
             end
 
@@ -108,7 +106,7 @@ module ws2812 (
                         led_counter <= led_counter - 1;
                         bit_counter <= t_period;
                         rgb_counter <= 23;
-                        led_color <= led_reg[23 * led_counter +: 23];
+                        led_color <= led_reg[23 * led_counter -: 24];
 
                         if(led_counter == 0) begin
                             state <= STATE_RESET;
