@@ -2,13 +2,13 @@
 
 `ifdef FORMAL
     `define NO_MEM_RESET 0
-`else
-    `define NO_MEM_RESET 1
 `endif
 
 
 module ws2812 (
-    input [24 * NUM_LEDS - 1:0] packed_rgb_data,
+    input [23:0] rgb_colour,
+    input [NUM_LEDS - 1:0] led_mask,
+    input write,
     input reset,
     input clk,  //12MHz
 
@@ -46,8 +46,7 @@ module ws2812 (
 
     initial data = 0;
 
-    wire [24 * NUM_LEDS - 1:0] led_reg;
-    assign led_reg = packed_rgb_data;
+    reg [23:0] led_reg[NUM_LEDS-1:0];
 
     reg [LED_BITS-1:0] led_counter = 0;
     reg [COUNT_BITS-1:0] bit_counter = 0;
@@ -60,9 +59,35 @@ module ws2812 (
 
     reg [23:0] led_color = 24'h00_00_00;
 
+    integer i;
+
+    always @(posedge clk) begin
+      if (write) begin
+        for (i=0; i<NUM_LEDS; i=i+1) begin
+          led_reg[i] <= led_mask[i] & 1'b1 ? rgb_colour : led_reg[i];
+        end
+      end
+      /* led_color <= led_reg[led_counter]; */
+    end
+
+    initial begin
+      for (i=0; i<NUM_LEDS; i=i+1)
+        led_reg[i] = 0;
+    end
+
     always @(posedge clk)
         // reset
         if(reset) begin
+          //  In order to infer BRAM, can't have a reset condition
+          //  like this. But it will fail formal if you don't reset
+          //  it.
+          `ifdef NO_MEM_RESET
+            $display("Bypassing memory reset to allow BRAM");
+          `else
+            // initialise led data to 0
+            for (i=0; i<NUM_LEDS; i=i+1)
+              led_reg[i] <= 0;
+          `endif
             state <= STATE_RESET;
             bit_counter <= t_reset;
             rgb_counter <= 23;
@@ -76,6 +101,7 @@ module ws2812 (
                 // register the input values
                 rgb_counter <= 5'd23;
                 led_counter <= NUM_LEDS - 1;
+                led_color <= led_reg[NUM_LEDS - 1];
                 data <= 0;
 
                 bit_counter <= bit_counter - 1;
@@ -83,7 +109,6 @@ module ws2812 (
                 if(bit_counter == 0) begin
                     state <= STATE_DATA;
                     bit_counter <= t_period;
-                    led_color <= led_reg[23 * led_counter -: 24];
                 end
             end
 
@@ -106,12 +131,13 @@ module ws2812 (
                         led_counter <= led_counter - 1;
                         bit_counter <= t_period;
                         rgb_counter <= 23;
-                        led_color <= led_reg[23 * led_counter -: 24];
 
                         if(led_counter == 0) begin
                             state <= STATE_RESET;
                             led_counter <= NUM_LEDS - 1;
                             bit_counter <= t_reset;
+                        end else begin
+                          led_color <= led_reg[led_counter - 1];
                         end
                     end
                 end 
