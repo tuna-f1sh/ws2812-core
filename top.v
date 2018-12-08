@@ -10,7 +10,7 @@ module top (
   always @(posedge clk)
     reset <= 0;
 
-  reg [20:0] count = 0;
+  reg [14:0] count = 0;
   reg clk_1 = 1'b0;
 
   reg [7:0] green = 8'h10;
@@ -19,8 +19,8 @@ module top (
   wire [23:0] rgb_colour = {green, red, blue};
   reg [7:0] wheel = 0;
 
-  /* reg [NUM_LEDS - 1:0] led_mask = 1; */
-  reg [NUM_LEDS - 1:0] led_mask = {1'b0, 1'b1, 1'b0, 1'b1};
+  reg [NUM_LEDS - 1:0] led_mask = 1;
+  /* reg [NUM_LEDS - 1:0] led_mask = {1'b0, 1'b1, 1'b0, 1'b1}; */
 
   always @(posedge clk) begin
     count <= count + 1;
@@ -44,6 +44,8 @@ module top (
       blue <= 0;
     end
 
+    /* wheel <= wheel + 1; */
+    led_mask <= ~led_mask;
     led_mask <= led_mask << 1;
     if (led_mask == (1 << NUM_LEDS - 1)) begin
       led_mask <= 1;
