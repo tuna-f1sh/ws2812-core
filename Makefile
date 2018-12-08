@@ -25,7 +25,7 @@ burn:
 	iceprog $(BUILD)/$(PROJ).bin
 
 test:
-	iverilog -o demo $(TESTBENCH) $(FILES)
+	iverilog -o demo $(TESTBENCH) ws2812.v
 	vvp demo
 	#gtkwave dump.vcd
 

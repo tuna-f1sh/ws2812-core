@@ -2,25 +2,26 @@ module test;
 
   reg clk = 0;
   reg reset = 1;
-  reg [7:0] led_num = 0;
-  reg write = 0;
-  reg [23:0] rgb_data = 0;
+  reg [24 * 4 - 1:0] rgb_data = 0;
+  reg [7:0] red = 0;
+  reg [7:0] green = 0;
+  reg [7:0] blue = 0;
+  integer i;
 
   initial begin
      $dumpfile("test.vcd");
      $dumpvars(0,test);
-     $dumpvars(1,ws2812_inst.led_reg[0]);
      # 20
      reset <= 0;
      # 10
-     led_num <= 0;
-     rgb_data <= 24'hAA_CC_DD;
-     write <= 1;
-     # 2;
-     write <= 0;
+     rgb_data[24 * 0 +: 24] <= 24'hFF_FF_FF;
+     # 10;
+     /* rgb_data[23 * 3 +: 24] <= 24'h00_FF_00; */
+     /* # 10; */
+     /* for (i=0; i<4; i=i+1) */
+     /* rgb_data[23 * 1 +: 24] <= {green, red, blue}; */
 
-
-     repeat (6) begin
+     repeat (12) begin
          wait(ws2812_inst.led_counter == 0);
          wait(ws2812_inst.state == 1);
      end
@@ -28,9 +29,14 @@ module test;
      $finish;
   end
 
-  ws2812 #(.NUM_LEDS(4))  ws2812_inst(.clk(clk), .reset(reset), .rgb_data(rgb_data), .led_num(led_num), .write(write));
+  ws2812 #(.NUM_LEDS(4))  ws2812_inst(.clk(clk), .reset(reset), .packed_rgb_data(rgb_data));
   /* Make a regular pulsing clock. */
-  always #1 clk = !clk;
+  always #1 begin
+    clk <= !clk;
+    /* red <= red + 1; */
+    /* blue <= blue + 1; */
+    /* green <= green + 1; */
+  end
 
 endmodule // test
 

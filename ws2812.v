@@ -1,12 +1,5 @@
 `default_nettype none
 
-`ifdef FORMAL
-    `define NO_MEM_RESET 0
-`else
-    `define NO_MEM_RESET 1
-`endif
-
-
 module ws2812 (
     input [24 * NUM_LEDS - 1:0] packed_rgb_data,
     input reset,
@@ -82,8 +75,8 @@ module ws2812 (
 
                 if(bit_counter == 0) begin
                     state <= STATE_DATA;
+                    led_color <= led_reg[24 * NUM_LEDS - 1 -: 24];
                     bit_counter <= t_period;
-                    led_color <= led_reg[23 * led_counter -: 24];
                 end
             end
 
@@ -106,12 +99,13 @@ module ws2812 (
                         led_counter <= led_counter - 1;
                         bit_counter <= t_period;
                         rgb_counter <= 23;
-                        led_color <= led_reg[23 * led_counter -: 24];
 
                         if(led_counter == 0) begin
                             state <= STATE_RESET;
                             led_counter <= NUM_LEDS - 1;
                             bit_counter <= t_reset;
+                        end else begin
+                            led_color <= led_reg[24 * led_counter - 1 -: 24];
                         end
                     end
                 end 
