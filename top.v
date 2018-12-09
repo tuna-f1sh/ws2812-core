@@ -47,11 +47,12 @@ module top (
 
     led_num <= led_num + 1;
     led_rgb_data[24 * led_num +: 24] <= rgb_colour;
+
     if (led_num == NUM_LEDS) begin
       wheel <= wheel + 1;
       led_num <= 0;
     end
-  end    
+  end
 
 
   ws2812 #(.NUM_LEDS(NUM_LEDS)) ws2812_inst(.data(ws_data), .clk(clk), .reset(reset), .packed_rgb_data(led_rgb_data));
