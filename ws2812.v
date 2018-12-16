@@ -59,7 +59,7 @@ module ws2812 (
             state <= STATE_RESET;
             bit_counter <= t_reset;
             rgb_counter <= 23;
-            led_counter <= NUM_LEDS - 1;
+            led_counter <= 0;
             data <= 0;
 
         // state machine to generate the data output
@@ -68,15 +68,17 @@ module ws2812 (
             STATE_RESET: begin
                 // register the input values
                 rgb_counter <= 5'd23;
-                led_counter <= NUM_LEDS - 1;
+                led_counter <= 0;
+                led_color <= led_reg[23:0];
                 data <= 0;
 
                 bit_counter <= bit_counter - 1;
 
                 if(bit_counter == 0) begin
                     state <= STATE_DATA;
-                    led_color <= led_reg[24 * NUM_LEDS - 1 -: 24];
+                    led_color <= led_reg[23:0];
                     bit_counter <= t_period;
+                    led_counter <= led_counter + 1;
                 end
             end
 
@@ -96,16 +98,17 @@ module ws2812 (
                     rgb_counter <= rgb_counter - 1;
 
                     if(rgb_counter == 0) begin
-                        led_counter <= led_counter - 1;
+                        led_counter <= led_counter + 1;
                         bit_counter <= t_period;
                         rgb_counter <= 23;
 
-                        if(led_counter == 0) begin
+                        if(led_counter == NUM_LEDS) begin
                             state <= STATE_RESET;
-                            led_counter <= NUM_LEDS - 1;
+                            led_counter <= 0;
                             bit_counter <= t_reset;
+                            led_color <= led_reg[23:0];
                         end else begin
-                            led_color <= led_reg[24 * led_counter - 1 -: 24];
+                            led_color <= led_reg[24 * led_counter +: 24];
                         end
                     end
                 end 
@@ -134,13 +137,13 @@ module ws2812 (
         always @(posedge clk) begin
             assert(bit_counter <= t_reset);
             assert(rgb_counter <= 23);
-            assert(led_counter <= NUM_LEDS - 1);
+            assert(led_counter <= 0);
 
             if(state == STATE_DATA) begin
                 assert(bit_counter <= t_period);
                 // led counter decrements
                 if($past(state) == STATE_DATA && $past(rgb_counter) == 0 && $past(bit_counter) == 0)
-                    assert(led_counter == $past(led_counter) - 1);
+                    assert(led_counter == $past(led_counter) + 1);
             end
 
             if(state == STATE_RESET) begin
