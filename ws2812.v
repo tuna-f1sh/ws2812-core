@@ -9,7 +9,7 @@ module ws2812 (
 );
     parameter NUM_LEDS = 8;
     parameter CLK_MHZ = 12;
-    localparam LED_BITS = $clog2(NUM_LEDS);
+    localparam LED_BITS = $clog2(NUM_LEDS + 1); // plus one in the case of a power 2 number and compare to NUM_LEDS
 
     /*
     great information here:
